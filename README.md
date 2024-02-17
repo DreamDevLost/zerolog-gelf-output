@@ -58,8 +58,8 @@ The `NewGelfWriter` function supports various options to customize the behavior 
 
 - **Network Protocol**: Choose between `udp` and `tcp` for log transmission.
 - **GELF Server Address**: Specify the address of your GELF server in the format `host:port`.
-- **TLS Configuration**: If using `tcp`, you can provide TLS configuration for secure communication.
-- **Retry Strategy**: Configure the retry attempts and backoff strategy for handling network failures.
+<!-- - **TLS Configuration**: If using `tcp`, you can provide TLS configuration for secure communication. -->
+<!-- - **Retry Strategy**: Configure the retry attempts and backoff strategy for handling network failures. -->
 
 ## Advanced Usage
 
