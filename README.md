@@ -6,15 +6,15 @@ The `zerolog-gelf-output` module is designed to seamlessly integrate with Go's p
 
 - **Easy Integration**: Works out of the box with the zerolog logger.
 - **GELF Support**: Fully compatible with the GELF (Graylog Extended Log Format) specification.
-- **Flexible Configuration**: Supports various configurations including log level filtering, custom field mapping, and more.
-- **Network Resilience**: Implements retry and backoff strategies to handle network issues gracefully.
-- **Secure Transport**: Supports TLS encryption for secure log transmission.
+<!-- - **Network Resilience**: Implements retry and backoff strategies to handle network issues gracefully. -->
+<!-- - **Flexible Configuration**: Supports various configurations including log level filtering, custom field mapping, and more. -->
+<!-- - **Secure Transport**: Supports TLS encryption for secure log transmission. -->
 
 ## Getting Started
 
 ### Prerequisites
 
-- Go 1.13 or later
+- Go 1.15 or later
 - A GELF-compatible server (e.g., Graylog) accessible over the network
 
 ### Installation
@@ -34,12 +34,12 @@ package main
 
 import (
     "github.com/rs/zerolog"
-    "github.com/DreamDevLost/zerolog-gelf-output"
+    zerologgelfoutput "github.com/DreamDevLost/zerolog-gelf-output"
 )
 
 func main() {
     // Configure the GELF writer
-    gelfWriter, err := zerolog_gelf_output.NewGelfWriter("udp", "your-gelf-server:12201")
+    gelfWriter, err := zerologgelfoutput.NewWithPassthrough("udp://localhost:12201", "app-name", "environment", "v1.0.0", zerolog.ConsoleWriter{Out: os.Stdout})
     if err != nil {
         panic("Failed to create GELF writer: " + err.Error())
     }
@@ -48,7 +48,7 @@ func main() {
     log := zerolog.New(gelfWriter).With().Timestamp().Logger()
 
     // Log a message as you normally would
-    log.Info().Msg("This is a test message sent to GELF server")
+    log.Info().Str("info1", "info1").Int("info2", 2).Msg("This is a test message sent to GELF server")
 }
 ```
 
