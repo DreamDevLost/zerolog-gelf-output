@@ -52,19 +52,6 @@ func main() {
 }
 ```
 
-### Configuration Options
-
-The `NewGelfWriter` function supports various options to customize the behavior of the GELF writer:
-
-- **Network Protocol**: Choose between `udp` and `tcp` for log transmission.
-- **GELF Server Address**: Specify the address of your GELF server in the format `host:port`.
-<!-- - **TLS Configuration**: If using `tcp`, you can provide TLS configuration for secure communication. -->
-<!-- - **Retry Strategy**: Configure the retry attempts and backoff strategy for handling network failures. -->
-
-## Advanced Usage
-
-For more advanced use cases, refer to the [documentation](#) (link to detailed documentation). This includes topics such as custom field mappings, filtering logs based on level, and integrating with existing logging setups.
-
 ## Contributing
 
 We welcome contributions! If you'd like to contribute, please follow the guidelines outlined in [CONTRIBUTING.md](CONTRIBUTING.md).
