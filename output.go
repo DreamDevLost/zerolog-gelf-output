@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/rs/zerolog"
 	"gopkg.in/aphistic/golf.v0"
@@ -12,6 +13,7 @@ import (
 type zGelfOutput struct {
 	passthrough                 io.Writer
 	gl                          *golf.Logger
+	gc                          *golf.Client
 	addr, appName, env, version string
 }
 
@@ -42,7 +44,7 @@ func new(addr, appName, env, version string, passthrough io.Writer) (io.WriteClo
 
 // New creates a new io.WriteCloser that sends logs to a GELF server at the given address.
 func New(addr, appName, env, version string) (io.WriteCloser, error) {
-	return new(addr, appName, env, version, io.Discard)
+	return new(addr, appName, env, version, os.Stdout)
 }
 
 // NewWithPassthrough creates a new io.WriteCloser that sends logs to a GELF server at the given address
@@ -58,7 +60,7 @@ func New(addr, appName, env, version string) (io.WriteCloser, error) {
 //		...
 //	}
 //
-// // OR
+// OR
 //
 //	w, err := NewWithPassthrough("localhost", "myapp", "dev", "1.0.0", zerolog.ConsoleWriter{Out: os.Stdout}))
 //	if err != nil {
@@ -72,6 +74,15 @@ func (w *zGelfOutput) Write(p []byte) (n int, err error) {
 	return w.WriteZerologMessage(p)
 }
 
+var zerologLevelsToGelfLevels = map[string]int{
+	zerolog.DebugLevel.String(): golf.LEVEL_DBG,
+	zerolog.InfoLevel.String():  golf.LEVEL_INFO,
+	zerolog.WarnLevel.String():  golf.LEVEL_WARN,
+	zerolog.ErrorLevel.String(): golf.LEVEL_ERR,
+	zerolog.FatalLevel.String(): golf.LEVEL_CRIT,
+	zerolog.PanicLevel.String(): golf.LEVEL_EMERG,
+}
+
 func (w *zGelfOutput) WriteZerologMessage(p []byte) (n int, err error) {
 	n, err = w.passthrough.Write(p)
 	if err != nil {
@@ -82,32 +93,27 @@ func (w *zGelfOutput) WriteZerologMessage(p []byte) (n int, err error) {
 	if err := json.Unmarshal(p, &jsonMsg); err != nil {
 		return 0, err
 	}
-	message := jsonMsg["message"].(string)
+
+	message := getStringFromMap(jsonMsg, "message", "")
 	delete(jsonMsg, "message")
-	level := zerolog.NoLevel.String()
-	if _, ok := jsonMsg["level"]; ok {
-		level = jsonMsg["level"].(string)
-	}
+
+	level := getStringFromMap(jsonMsg, "level", zerolog.InfoLevel.String())
 	delete(jsonMsg, "level")
+
 	delete(jsonMsg, "time")
 	delete(jsonMsg, "timestamp")
 
-	switch level {
-	case zerolog.DebugLevel.String():
-		err = w.gl.Dbgm(jsonMsg, message)
-	case zerolog.InfoLevel.String():
-		err = w.gl.Infom(jsonMsg, message)
-	case zerolog.WarnLevel.String():
-		err = w.gl.Warnm(jsonMsg, message)
-	case zerolog.ErrorLevel.String():
-		err = w.gl.Errm(jsonMsg, message)
-	case zerolog.FatalLevel.String():
-		err = w.gl.Critm(jsonMsg, message)
-	case zerolog.PanicLevel.String():
-		err = w.gl.Emergm(jsonMsg, message)
-	default:
-		err = w.gl.Noticem(jsonMsg, message)
+	golfMsg := w.gl.NewMessage()
+	if _, ok := zerologLevelsToGelfLevels[level]; ok {
+		golfMsg.Level = zerologLevelsToGelfLevels[level]
+	} else {
+		golfMsg.Level = golf.LEVEL_INFO
 	}
+	golfMsg.ShortMessage = message
+	golfMsg.Attrs = jsonMsg
+
+	// w.gl.(golfMsg)
+	err = w.gc.QueueMsg(golfMsg)
 
 	return
 }
